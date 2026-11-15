@@ -5,15 +5,51 @@
 > **Đội thi:** `it rained in the afternoon` — **Giải Nhất** Track 2  
 > **Thiết kế nộp Vòng Chung kết:** **`hwmaj_ilp6t_asic`** (`asic/rtl/hwmaj_ilp6t_asic.v`)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![HDL: Verilog](https://img.shields.io/badge/HDL-Verilog-blue)
+![Synthesis: Yosys](https://img.shields.io/badge/Synthesis-Yosys%200.52-orange)
+![STA: OpenSTA](https://img.shields.io/badge/STA-OpenSTA%203.1-orange)
+![Tech: Nangate 45nm](https://img.shields.io/badge/Tech-Nangate%2045nm-lightgrey)
+![Verified: 65,536/65,536](https://img.shields.io/badge/Verified-65%2C536%2F65%2C536-brightgreen)
+
+**Ngôn ngữ:** Tiếng Việt · [English](README.en.md)
+
 ---
 
-## Danh sách Thành viên Đội thi
+## Tóm tắt
 
-1. **Lê Nguyễn Đăng Khoa**
-2. **Võ Trần Đăng Khoa** — **Trưởng nhóm**
-3. **Huỳnh Lê Thanh Liêm**
-4. **Nguyễn Nhật Minh**
-5. **Trần Công Thiện**
+Bộ nhân xấp xỉ signed INT8 cho khối MAC của CNN với trọng số cố định. Thiết kế **`hwmaj_ilp6t_asic`** đã đạt **Giải Nhất Track 2** của cuộc thi.
+
+- **Sai số thấp:** MAE = 27,29 trên toàn bộ 65.536 cặp đầu vào, giảm 34% so với bản `candidate2` (41,24). Đầu ra bằng 0 chính xác khi một toán hạng bằng 0.
+- **Độ chính xác CNN giữ nguyên:** MNIST (1.000 ảnh) đạt 93,00%, nhân chính xác đạt 92,40%. Chênh lệch này không có ý nghĩa thống kê (xem mục 2.2).
+- **Gọn và nhanh:** `convolution_unit` (9 bộ nhân) đạt 2.889,8 µm², 1,484 ns, 0,328 mW trên Nangate 45nm. Bộ nhân đứng riêng: 262,0 µm², 0,6805 ns, 0,0253 mW.
+- **Cây nén tối ưu bằng ILP:** 29 Full Adder, 0 Half Adder, 6 tầng, sắp theo thời điểm đến của tín hiệu.
+- **Kiểm chứng vét cạn:** RTL khớp mô hình tham chiếu độc lập trên 65.536/65.536 cặp.
+
+![So sánh diện tích, delay, công suất](docs/figures/fig51_ppa_charts.png)
+
+*Số xanh/đỏ trên mỗi cột: chênh lệch so với `TheMultiplier` của BTC. Số baseline của BTC lấy từ lần đo trước (xem chú thích † ở mục 2.3).*
+
+---
+
+## Chạy nhanh
+
+### Kiểm chứng vét cạn (không cần công cụ thương mại)
+
+Cần [Icarus Verilog](https://steveicarus.github.io/iverilog/) (hoặc trình mô phỏng Verilog bất kỳ):
+
+```bash
+iverilog -g2005 -o sim_exhaustive asic/rtl/hwmaj_ilp6t_asic.v asic/verification/tb_hwmaj_ilp6t_exhaustive.v
+vvp sim_exhaustive
+```
+
+Kết quả mong đợi ở cuối: `TOTAL=65536  MISMATCH=0  ZERO_INPUT_ERR=0` và `RESULT: PASS (65536/65536)`. Testbench so RTL với một mô hình tham chiếu viết độc lập (`expected = a*b - T + comp`) và tính luôn ME, MAE, sai số lớn nhất.
+
+> Lưu ý: kết quả vét cạn 65.536/65.536 đã được chạy khi làm bài thi. Lệnh Icarus ở trên là cách chạy lại; chưa được thử trên Icarus trong lần chỉnh sửa tài liệu này.
+
+### Tổng hợp ASIC
+
+Xem [mục 5](#5-tái-lập-kết-quả): cần Yosys 0.52, OpenSTA 3.1.0 và thư viện `normal.lib` (Nangate Open Cell Library).
 
 ---
 
@@ -126,7 +162,8 @@ So với candidate2, hwmaj giảm 34% sai số và không làm giảm độ chí
 │
 ├── DECISIONS.md                           # Lịch sử quyết định kỹ thuật
 ├── LICENSE                                # MIT
-└── README.md                              # Tài liệu tổng quan
+├── README.md                              # Tài liệu tổng quan (tiếng Việt)
+└── README.en.md                           # English overview
 ```
 
 ---
@@ -159,3 +196,13 @@ Script tìm module trong `asic/rtl/`, chạy Yosys và OpenSTA, rồi ghi báo c
 ## 7. Giấy phép
 
 Mã nguồn và tài liệu được phát hành theo giấy phép [MIT](LICENSE).
+
+---
+
+## 8. Đội thi
+
+1. **Lê Nguyễn Đăng Khoa**
+2. **Võ Trần Đăng Khoa** — **Trưởng nhóm**
+3. **Huỳnh Lê Thanh Liêm**
+4. **Nguyễn Nhật Minh**
+5. **Trần Công Thiện**
