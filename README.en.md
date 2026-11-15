@@ -134,7 +134,7 @@ Compared with candidate2, hwmaj cuts error by 34% and keeps CNN accuracy, at the
 - ME is biased negative (−1.49), while candidate2 is close to 0. The compensation is not perfectly balanced.
 - The MNIST-like numbers depend on a sample of 200 images and 36 weights.
 - The 0.6-point CNN accuracy difference is not statistically significant.
-- Several documents reference helper scripts under `scratch/` (e.g. `scratch/hwmaj_ilp.py`) that are not part of this repository, so the ILP solution and some figures cannot be regenerated from here yet.
+- Several documents reference helper scripts under `tools/` (e.g. `tools/hwmaj_ilp.py`) that are not part of this repository, so the ILP solution and some figures cannot be regenerated from here yet.
 
 ---
 

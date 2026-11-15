@@ -161,7 +161,7 @@ Số liệu bộ nhân riêng (không gắn CNN): candidate2 246.050 µm², 0.73
 
 **Lưu ý:** trước đó tôi kết luận lịch tầng không khớp RTL. Kết luận đó sai, do cách đếm độ sâu phụ thuộc bỏ qua việc bit chưa dùng được giữ lại trong pool và dùng ở tầng sau. Lịch "6 tầng" là đúng với RTL.
 
-**Điểm chỉ là ước lượng, không phải đo:** thứ tự theo thời điểm đến dựa trên giả định trễ (tích riêng phần = 1, bit bù = 3.5 đơn vị) trong `scratch/tree_timing.py`. `comp[8]` được nối vào cây nhưng luôn bằng 0 vì $g \le 2$.
+**Điểm chỉ là ước lượng, không phải đo:** thứ tự theo thời điểm đến dựa trên giả định trễ (tích riêng phần = 1, bit bù = 3.5 đơn vị) trong `tools/tree_timing.py`. `comp[8]` được nối vào cây nhưng luôn bằng 0 vì $g \le 2$.
 
 **Đã sửa trong tài liệu** (`docs/Giai_thich_bo_nhan_hwmaj_ilp6t.md`):
 - §5.2: "1 OR" thành "3 AND và 2 OR".
@@ -264,7 +264,7 @@ Số liệu bộ nhân riêng (không gắn CNN): candidate2 246.050 µm², 0.73
     DECISIONS ghi netlist khớp mô hình $ab - T + comp$ với 0 / 65,536 sai lệch (bảng kiểm, mục liên quan đến DEC-051 và DEC-052).
 
 22. *Số liệu này tái lập ở đâu?*
-    Xem §12.2 của tài liệu: `scratch/doc_numbers.py`, `scratch/doc_examples.py`, `scratch/finalize_ilp6t.py`, `scratch/hwmaj_ilp.py`.
+    Xem §12.2 của tài liệu: `tools/doc_numbers.py`, `tools/doc_examples.py`, `tools/finalize_ilp6t.py`, `tools/hwmaj_ilp.py`.
 
 23. *Vì sao không dùng bản hwmaj_ilp5?*
     DEC-052: `ilp6t` có cùng hàm, cùng sai số, và delay tốt hơn một chút (1.4841 so với 1.5058 ns), với diện tích gần như bằng nhau.
@@ -337,10 +337,10 @@ Mỗi mục ghi câu hỏi (tóm tắt), và ý trả lời chính. Chi tiết n
 **Tái lập:** chạy từ thư mục gốc dự án:
 
 ```bash
-python scratch/fig06_regression_T_vs_g.py
+python tools/fig06_regression_T_vs_g.py
 ```
 
-Script nằm tại `scratch/fig06_regression_T_vs_g.py`, lưu hình vào `docs/figures/fig06_regression_T_vs_g.png`, và in ra `n`, hệ số và $R^2$ để đối chiếu với bảng bên dưới.
+Script nằm tại `tools/fig06_regression_T_vs_g.py`, lưu hình vào `docs/figures/fig06_regression_T_vs_g.png`, và in ra `n`, hệ số và $R^2$ để đối chiếu với bảng bên dưới.
 
 ---
 
@@ -385,13 +385,13 @@ Script nằm tại `scratch/fig06_regression_T_vs_g.py`, lưu hình vào `docs/f
 - *ILP có tốt hơn candidate2 không?* Không đáng kể. Ở biến thể ILP của candidate2, 4 tầng cho diện tích −0.36%, 5 tầng cho diện tích +0.06% (DECISIONS, mục ILP có ràng buộc số tầng).
 - *Vậy cải tiến là gì?* Thứ tự theo thời điểm đến, đưa bit bù đến muộn vào chân nhanh hơn của FA. Lợi ích đo được là delay giảm khoảng 3.5% so với bản không sắp thứ tự.
 
-**Nguồn:** §6 của tài liệu, DECISIONS (mục thử nghiệm cây nén ILP, `scratch/gen_tree_rtl.py`; mục ILP có ràng buộc số tầng, `scratch/stage_ilp_tree.py`; DEC-052).
+**Nguồn:** §6 của tài liệu, DECISIONS (mục thử nghiệm cây nén ILP, `tools/gen_tree_rtl.py`; mục ILP có ràng buộc số tầng, `tools/stage_ilp_tree.py`; DEC-052).
 
 ---
 
 ## 13. ILP giải thích để kiểm tra slide
 
-Mục này dùng để đối chiếu slide với ý nghĩa thật. Mọi số ở đây đã được chạy lại bằng `scratch/hwmaj_ilp.py` (cùng mô hình) và đối chiếu với RTL.
+Mục này dùng để đối chiếu slide với ý nghĩa thật. Mọi số ở đây đã được chạy lại bằng `tools/hwmaj_ilp.py` (cùng mô hình) và đối chiếu với RTL.
 
 **13.1. Đầu vào: ma trận bit của bản nộp, 50 bit**
 
@@ -468,7 +468,7 @@ Số FA theo tầng: 6, 9, 4, 4, 3, 3 (tổng 29), 0 HA. Khớp bảng §6.2 c�
 
 **13.7. Đối chiếu với RTL**
 
-RTL `asic/rtl/hwmaj_ilp6t_asic.v` được sinh từ lời giải này (`scratch/tree_timing.py`, cấu hình `tt_s6_arr`). Đã kiểm theo thứ tự tên wire: tầng 1 gồm `s1, s2` ở cột 7, `s3` ở cột 8, `s4` ở cột 10, `s5` ở cột 11, `s6` ở cột 12, khớp bảng trên.
+RTL `asic/rtl/hwmaj_ilp6t_asic.v` được sinh từ lời giải này (`tools/tree_timing.py`, cấu hình `tt_s6_arr`). Đã kiểm theo thứ tự tên wire: tầng 1 gồm `s1, s2` ở cột 7, `s3` ở cột 8, `s4` ở cột 10, `s5` ở cột 11, `s6` ở cột 12, khớp bảng trên.
 
 **13.8. Những gì slide có thể nói và những gì không nên nói**
 
@@ -488,7 +488,7 @@ Không nên nói:
 
 ## 14. Hình minh họa cho từng bước giải thích ILP
 
-Mỗi bước trong phần giải thích ILP (mục 13) có một hình tương ứng. Các hình được sinh bởi `scratch/draw_ilp6t_steps.py` và `scratch/draw_ilp6t_explain.py`.
+Mỗi bước trong phần giải thích ILP (mục 13) có một hình tương ứng. Các hình được sinh bởi `tools/draw_ilp6t_steps.py` và `tools/draw_ilp6t_explain.py`.
 
 | Bước | Nội dung | Hình |
 |:---:|---|---|
@@ -513,7 +513,7 @@ Mỗi bước trong phần giải thích ILP (mục 13) có một hình tương 
 
 ## 15. Nhóm bit của từng FA qua 6 tầng (lấy từ RTL)
 
-Các hình `fig12_stage1_groups.png` đến `fig17_stage6_groups.png` khoanh đỏ ba bit gom thành một FA ở mỗi tầng. Nhãn trên khoanh là tên wire trong `asic/rtl/hwmaj_ilp6t_asic.v`. Không có HA nào, vì lời giải ILP có 0 HA. Script: `scratch/draw_ilp6t_groups.py`. Script đọc trực tiếp RTL, và kiểm tra: số FA mỗi tầng là 6, 9, 4, 4, 3, 3; mọi đầu vào của FA đã sẵn sàng ở tầng của nó; không bit nào được dùng hai lần.
+Các hình `fig12_stage1_groups.png` đến `fig17_stage6_groups.png` khoanh đỏ ba bit gom thành một FA ở mỗi tầng. Nhãn trên khoanh là tên wire trong `asic/rtl/hwmaj_ilp6t_asic.v`. Không có HA nào, vì lời giải ILP có 0 HA. Script: `tools/draw_ilp6t_groups.py`. Script đọc trực tiếp RTL, và kiểm tra: số FA mỗi tầng là 6, 9, 4, 4, 3, 3; mọi đầu vào của FA đã sẵn sàng ở tầng của nó; không bit nào được dùng hai lần.
 
 ![Tầng 1](figures/fig12_stage1_groups.png)
 
@@ -546,7 +546,7 @@ Các hình `fig12_stage1_groups.png` đến `fig17_stage6_groups.png` khoanh đ�
 
 ![Vì sao chọn FA](figures/fig18_ilp_why_fa.png)
 
-*Hình 18. (a) đếm bit; (b) chi phí tối ưu theo số tầng; (c) giữ thêm 1 bit cuối bằng cách thêm HA thì đắt hơn.* Script: `scratch/draw_ilp6t_reason.py`.
+*Hình 18. (a) đếm bit; (b) chi phí tối ưu theo số tầng; (c) giữ thêm 1 bit cuối bằng cách thêm HA thì đắt hơn.* Script: `tools/draw_ilp6t_reason.py`.
 
 **1. Đếm bit.** Một FA lấy 3 bit, trả 1 bit tổng ở cùng cột và 1 bit nhớ ở cột kế: tổng số bit giảm đúng 1. Một HA lấy 2 bit, trả 2 bit: tổng số bit không đổi, HA chỉ dời một bit sang cột kế. Vậy nếu không có HA thì $\#FA = 50 - (\text{số bit cuối})$.
 
@@ -567,7 +567,7 @@ Các hình `fig12_stage1_groups.png` đến `fig17_stage6_groups.png` khoanh đ�
 
 ![Cách solver giải](figures/fig21_solver_method_slide.png)
 
-*Hình 21. Nới lỏng rồi tìm nghiệm nguyên cùng chi phí.* Script: `scratch/draw_ilp6t_solver_slide.py`. Hình 19 và 20 (`scratch/draw_ilp6t_solve.py`, `scratch/draw_ilp6t_solver_detail.py`) là bản chi tiết theo nhật ký HiGHS, dùng làm dự phòng khi bị hỏi.
+*Hình 21. Nới lỏng rồi tìm nghiệm nguyên cùng chi phí.* Script: `tools/draw_ilp6t_solver_slide.py`. Hình 19 và 20 (`tools/draw_ilp6t_solve.py`, `tools/draw_ilp6t_solver_detail.py`) là bản chi tiết theo nhật ký HiGHS, dùng làm dự phòng khi bị hỏi.
 
 **Hình gồm bốn phần:**
 1. **Ý tưởng trên ví dụ nhỏ 2 biến** (minh họa, không phải số bài thật): vùng xanh là miền nới lỏng; đỉnh LP $(1.5;\,0)$ cho chi phí 1.5, không nguyên; điểm nguyên $(1;\,1)$ cho 1.6.
@@ -583,13 +583,13 @@ Các hình `fig12_stage1_groups.png` đến `fig17_stage6_groups.png` khoanh đ�
 
 ![Miền nghiệm thật](figures/fig22_ilp6t_feasible_region.png)
 
-*Hình 22. Miền nghiệm thật của bài làm, lát cắt qua ba nghiệm thật.* Scripts: `scratch/ilp6t_slice.py`, `scratch/draw_ilp6t_region.py`.
+*Hình 22. Miền nghiệm thật của bài làm, lát cắt qua ba nghiệm thật.* Scripts: `tools/ilp6t_slice.py`, `tools/draw_ilp6t_region.py`.
 
 ### Hình đơn giản thay cho Hình 22 khi trình bày
 
 ![Sàn chi phí](figures/fig23_ilp6t_cost_floor.png)
 
-*Hình 23. Mọi cách xếp hợp lệ nằm trên sàn 29.0; lời giải chọn chạm đúng sàn.* Script: `scratch/draw_ilp6t_simple_floor.py`. Chỉ dùng ba số đã có ở trên: cận dưới LP = 29.0, 29 FA + 0 HA = 29.0, 28 FA + 3 HA = 29.8. Hình này là minh họa, không liệt kê hết các cách xếp hợp lệ; phần chứng minh vẫn là cận dưới LP bằng nghiệm nguyên (Hình 11).
+*Hình 23. Mọi cách xếp hợp lệ nằm trên sàn 29.0; lời giải chọn chạm đúng sàn.* Script: `tools/draw_ilp6t_simple_floor.py`. Chỉ dùng ba số đã có ở trên: cận dưới LP = 29.0, 29 FA + 0 HA = 29.0, 28 FA + 3 HA = 29.8. Hình này là minh họa, không liệt kê hết các cách xếp hợp lệ; phần chứng minh vẫn là cận dưới LP bằng nghiệm nguyên (Hình 11).
 
 **Cách dựng hình:** miền nghiệm gốc nằm trong không gian 304 chiều nên không vẽ trực tiếp được. Hình lấy mặt phẳng đi qua ba nghiệm thật của chính mô hình:
 - $X_{INT}$: nghiệm nguyên tối ưu (29 FA, 0 HA, chi phí 29.0);

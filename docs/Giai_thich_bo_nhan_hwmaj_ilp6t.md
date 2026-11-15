@@ -527,11 +527,11 @@ Các nguồn đã đọc toàn văn: bằng sáng chế TI US 10,372,415, arXiv 
 
 | Số liệu | Script hoặc file |
 |---|---|
-| Sai số, MAE, ME, NMED | `scratch/doc_numbers.py` |
-| Ví dụ tính tay | `scratch/doc_examples.py` |
-| Hình | `scratch/doc_figures.py` (xuất vào `docs/figures/`) |
-| Netlist và kiểm tra vét cạn | `scratch/finalize_ilp6t.py` (gọi `scratch/tree_timing.py`) |
-| Cây ILP | `scratch/hwmaj_ilp.py` |
+| Sai số, MAE, ME, NMED | `tools/doc_numbers.py` |
+| Ví dụ tính tay | `tools/doc_examples.py` |
+| Hình | `tools/doc_figures.py` (xuất vào `docs/figures/`) |
+| Netlist và kiểm tra vét cạn | `tools/finalize_ilp6t.py` (gọi `tools/tree_timing.py`) |
+| Cây ILP | `tools/hwmaj_ilp.py` |
 | Luồng BTC | `build/work_asic/final_ilp6t/` (netlist, eval.txt), report trong `asic/reports/` |
 | CNN | kết quả hw_maj_s64 trong `DECISIONS.md` (DEC-048) |
 
