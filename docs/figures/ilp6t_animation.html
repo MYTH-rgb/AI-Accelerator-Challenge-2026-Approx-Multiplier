@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mô hình ILP 6 tầng xếp bộ cộng FA/HA — Trực quan hóa từng bước</title>
+<style>
+  :root {
+    --bg: #0b1120;
+    --panel: #131c31;
+    --panel-alt: #1a2642;
+    --border: #334155;
+    --text: #f8fafc;
+    --muted: #cbd5e1;
+    --blue: #38bdf8;
+    --blue-deep: #0284c7;
+    --green: #22c55e;
+    --green-bg: #14532d;
+    --red: #ef4444;
+    --red-bg: #7f1d1d;
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --orange: #fb923c;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.45;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 12px 16px 20px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .title-block h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.2px;
+  }
+
+  .title-block .subtitle {
+    margin: 4px 0 0;
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .verify-badge {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    border: 2px solid var(--green);
+    background: var(--green-bg);
+    color: #dcfce7;
+    white-space: nowrap;
+  }
+
+  .verify-badge.error {
+    border-color: var(--red);
+    background: var(--red-bg);
+    color: #fee2e2;
+    white-space: normal;
+    max-width: 460px;
+  }
+
+  /* Formula Bar */
+  .formula-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .formula-chip {
+    background: var(--panel-alt);
+    border: 1px solid #475569;
+    border-radius: 7px;
+    padding: 4px 10px;
+    color: #e2e8f0;
+  }
+
+  .formula-chip strong {
+    color: var(--amber);
+  }
+
+  .param-note {
+    color: #93c5fd;
+    font-size: 16px;
+    margin-left: auto;
+  }
+
+  /* Scene Tabs */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tab-btn {
+    background: var(--panel);
+    color: var(--muted);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tab-btn:hover {
+    border-color: var(--blue);
+    color: #fff;
+  }
+
+  .tab-btn.active {
+    background: #1d4ed8;
+    border-color: #60a5fa;
+    color: #ffffff;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+  }
+
+  .ctrl-btn {
+    background: var(--panel-alt);
+    color: #fff;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .ctrl-btn:hover:not(:disabled) {
+    border-color: var(--blue);
+    background: #233358;
+  }
+
+  .ctrl-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .ctrl-btn.primary {
+    background: #0284c7;
+    border-color: #38bdf8;
+  }
+
+  .ctrl-btn.primary.playing {
+    background: #b45309;
+    border-color: #fbbf24;
+  }
+
+  .speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .speed-wrap input[type="range"] {
+    width: 110px;
+    accent-color: var(--blue);
+    cursor: pointer;
+  }
+
+  .step-counter {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--amber);
+    padding: 4px 10px;
+    background: var(--panel-alt);
+    border-radius: 7px;
+  }
+
+  /* Caption Box */
+  .caption-box {
+    background: #172554;
+    border-left: 6px solid var(--amber);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Stage Main Area */
+  .stage-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .svg-wrap {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+  }
+
+  /* Scene 3 split layout */
+  .scene3-top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .counters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .counter-pill {
+    background: var(--panel-alt);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .counter-pill span.val {
+    font-size: 21px;
+    margin-left: 6px;
+  }
+
+  .stage-quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .q-btn {
+    background: var(--panel-alt);
+    color: var(--muted);
+    border: 1px solid #475569;
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .q-btn.active {
+    background: #0284c7;
+    color: #fff;
+    border-color: #38bdf8;
+  }
+
+  .legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 8px 0 10px;
+    padding: 8px 12px;
+    background: #0f172a;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot-swatch {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1.5px solid #fff;
+  }
+
+  .box-swatch {
+    width: 20px;
+    height: 15px;
+    border: 2.5px solid var(--red);
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* Inspector Panel */
+  .inspector {
+    margin-top: 12px;
+    background: #0f172a;
+    border: 2px solid #38bdf8;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .inspector-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .inspector-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #38bdf8;
+  }
+
+  .col-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .col-pill {
+    background: var(--panel-alt);
+    color: var(--muted);
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .col-pill.active {
+    background: #fbbf24;
+    color: #0f172a;
+    border-color: #fef08a;
+  }
+
+  .inspector-body {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  @media (max-width: 980px) {
+    .inspector-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .calc-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 17px;
+  }
+
+  .calc-line {
+    margin: 5px 0;
+  }
+
+  .ok-tag {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    background: var(--panel);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .mini-table th, .mini-table td {
+    border: 1px solid var(--border);
+    padding: 4px 6px;
+    text-align: center;
+  }
+
+  .mini-table th {
+    background: var(--panel-alt);
+    color: #93c5fd;
+  }
+
+  .mini-table tr.active-row {
+    background: #1e3a8a;
+    font-weight: 700;
+  }
+
+  /* Scene 4 */
+  .scene4-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .equation-banner {
+    background: #0f172a;
+    border: 2px solid var(--blue);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .conclusion-banner {
+    background: var(--green-bg);
+    border: 2px solid var(--green);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #dcfce7;
+  }
+
+  /* Scene 5 */
+  .demo-warning {
+    background: #78350f;
+    border: 2px solid var(--amber);
+    border-radius: 9px;
+    padding: 9px 14px;
+    margin-bottom: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fef3c7;
+  }
+
+  .scene5-foot {
+    margin-top: 10px;
+    background: #0f172a;
+    border: 1.5px solid var(--blue);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 17px;
+    color: #e0f2fe;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title-block">
+      <h1>Mô hình ILP xếp bộ cộng FA/HA qua 6 tầng (50 bit → 21 bit)</h1>
+      <div class="subtitle">Cây nén bit bộ nhân Signed INT8 · Cột 15 (trọng số cao) bên trái → Cột 3 (trọng số thấp) bên phải · Nhớ đi sang TRÁI</div>
+    </div>
+    <div id="self-check-badge" class="verify-badge">Đang kiểm tra...</div>
+  </div>
+
+  <div class="formula-bar">
+    <div class="formula-chip"><strong>Luật 1:</strong> 3·f[s][c] + 2·h[s][c] ≤ H[s][c]</div>
+    <div class="formula-chip"><strong>Luật 2:</strong> H[s+1][c] = H[s][c] − 2·f[s][c] − h[s][c] + (f[s][c−1] + h[s][c−1])</div>
+    <div class="formula-chip"><strong>Mục tiêu:</strong> min ∑(1.0·f + 0.6·h), H[6][c] ≤ 2</div>
+    <div class="param-note">Số tầng = 6 là tham số chọn trước (thử 4..9 đều ra 29 FA)</div>
+  </div>
+
+  <div class="tabs" id="scene-tabs">
+    <button class="tab-btn active" data-scene="1">Cảnh 1: Đề bài</button>
+    <button class="tab-btn" data-scene="2">Cảnh 2: Hai luật bộ cộng</button>
+    <button class="tab-btn" data-scene="3">Cảnh 3: Chạy 6 tầng</button>
+    <button class="tab-btn" data-scene="4">Cảnh 4: Vì sao đúng 29</button>
+    <button class="tab-btn" data-scene="5">Cảnh 5: Solver dò nghiệm (Ví dụ)</button>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="btn-reset" title="Về đầu cảnh">⏮ Đầu cảnh</button>
+    <button class="ctrl-btn" id="btn-prev">⏪ Bước lùi</button>
+    <button class="ctrl-btn primary" id="btn-play">▶ Phát</button>
+    <button class="ctrl-btn" id="btn-next">Bước tiếp ⏩</button>
+    <span class="step-counter" id="step-counter">Bước 1 / 1</span>
+    <div class="speed-wrap">
+      <label for="speed-slider">Tốc độ:</label>
+      <input type="range" id="speed-slider" min="0.5" max="2.5" step="0.25" value="1">
+      <span id="speed-label">1.0x</span>
+    </div>
+  </div>
+
+  <div class="caption-box" id="caption-box"></div>
+
+  <div class="stage-card" id="stage-root"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // =========================================================
+  // 1. DỮ LIỆU GỐC TỪ SOLVER HIGHS (KHÔNG CHẾ SỐ)
+  // =========================================================
+  const COLS_ASC = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const COLS_DISPLAY = [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3]; // 15 bên trái, 3 bên phải
+
+  const H_EXPECTED = [
+    [1, 0, 1, 8, 9, 9, 6, 5, 4, 3, 2, 1, 1], // H0 (tổng 50)
+    [1, 0, 1, 8, 5, 9, 7, 3, 3, 2, 3, 1, 1], // H1 (tổng 44)
+    [1, 0, 1, 6, 6, 3, 6, 3, 2, 3, 1, 2, 1], // H2 (tổng 35)
+    [1, 0, 1, 6, 6, 1, 3, 3, 3, 3, 1, 2, 1], // H3 (tổng 31)
+    [1, 0, 1, 6, 2, 3, 1, 4, 1, 4, 1, 2, 1], // H4 (tổng 27)
+    [1, 0, 1, 2, 4, 1, 2, 4, 1, 4, 1, 2, 1], // H5 (tổng 24)
+    [1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]  // H6 (tổng 21)
+  ];
+
+  // Bảng f[s][col] và h[s][col] (s = 0..5 tương ứng tầng 1..6)
+  const F_RAW = [
+    { 7: 2, 8: 1, 10: 1, 11: 1, 12: 1 },          // Tầng 1 (6 FA)
+    { 6: 1, 8: 3, 9: 2, 10: 1, 11: 1, 13: 1 },    // Tầng 2 (9 FA)
+    { 8: 1, 9: 2, 10: 1 },                        // Tầng 3 (4 FA)
+    { 7: 2, 9: 1, 11: 1 },                        // Tầng 4 (4 FA)
+    { 6: 2, 8: 1 },                               // Tầng 5 (3 FA)
+    { 7: 1, 10: 1, 12: 1 }                        // Tầng 6 (3 FA)
+  ];
+
+  const fTable = Array.from({ length: 6 }, (_, s) => {
+    const row = {};
+    COLS_ASC.forEach((c) => { row[c] = F_RAW[s][c] || 0; });
+    return row;
+  });
+
+  const hTable = Array.from({ length: 6 }, () => {
+    const row = {};
+    COLS_ASC.forEach((c) => { row[c] = 0; });
+    return row;
+  });
+
+  // =========================================================
+  // 2. BỘ TỰ KIỂM BẮT BUỘC (TÍNH LẠI H1..H6 TỪ H0 VÀ BẢNG f)
+  // =========================================================
+  const H_CALC = [];
+  const checkErrors = [];
+
+  function runSelfCheck() {
+    const h0 = {};
+    COLS_ASC.forEach((c, idx) => { h0[c] = H_EXPECTED[0][idx]; });
+    H_CALC.push(h0);
+
+    for (let s = 0; s < 6; s++) {
+      const nextH = {};
+      COLS_ASC.forEach((c, idx) => {
+        const cur = H_CALC[s][c];
+        const f = fTable[s][c];
+        const h = hTable[s][c];
+        // Luật 1: 3*f + 2*h <= H
+        if (3 * f + 2 * h > cur) {
+          checkErrors.push(`Vi phạm Luật 1 tại tầng ${s + 1} cột ${c}: 3×${f}+2×${h}=${3 * f + 2 * h} > ${cur}`);
+        }
+        // Luật 2: H[s+1][c] = H[s][c] - 2*f[s][c] - h[s][c] + (f[s][c-1] + h[s][c-1])
+        const carryIn = c > 3 ? (fTable[s][c - 1] + hTable[s][c - 1]) : 0;
+        const calcVal = cur - 2 * f - h + carryIn;
+        nextH[c] = calcVal;
+
+        const expVal = H_EXPECTED[s + 1][idx];
+        if (calcVal !== expVal) {
+          checkErrors.push(`Lệch Luật 2 tại tầng ${s + 1} cột ${c}: tính=${calcVal}, bảng=${expVal}`);
+        }
+      });
+      H_CALC.push(nextH);
+    }
+
+    // Kiểm tra điều kiện cuối H[6][c] <= 2
+    COLS_ASC.forEach((c) => {
+      if (H_CALC[6][c] > 2) {
+        checkErrors.push(`Vi phạm đích H6 tại cột ${c}: ${H_CALC[6][c]} > 2`);
+      }
+    });
+
+    const badge = document.getElementById("self-check-badge");
+    if (checkErrors.length === 0) {
+      badge.className = "verify-badge";
+      badge.textContent = "Kiểm tra: khớp solver ✓";
+    } else {
+      badge.className = "verify-badge error";
+      badge.innerHTML = "Lỗi tự kiểm:<br>" + checkErrors.join("<br>");
+    }
+  }
+
+  runSelfCheck();
+
+  // Tổng hợp số FA và tổng bit từng tầng từ H_CALC và fTable
+  const stageFaCount = fTable.map((row) => COLS_ASC.reduce((acc, c) => acc + row[c], 0));
+  const cumFaCount = [0];
+  for (let s = 0; s < 6; s++) cumFaCount.push(cumFaCount[s] + stageFaCount[s]);
+  const totalBitsAtStage = H_CALC.map((hRow) => COLS_ASC.reduce((acc, c) => acc + hRow[c], 0));
+
+  // =========================================================
+  // 3. TIỆN ÍCH VẼ SVG (MỌI CHỮ >= 16px)
+  // =========================================================
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  function el(tag, attrs = {}, textContent = null) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      node.setAttribute(k, String(v));
+    }
+    if (textContent !== null) node.textContent = textContent;
+    return node;
+  }
+
+  // =========================================================
+  // 4. QUẢN LÝ TRẠNG THÁI CHUNG & ANIMATION LOOP
+  // =========================================================
+  const state = {
+    scene: 1,
+    step: 0,
+    playing: false,
+    speed: 1.0,
+    inspectedCol: 8,
+    animProgress: 1,
+    rafId: null,
+    timerId: null
+  };
+
+  const SCENE_STEPS = {
+    1: [
+      { caption: "Bước 1/3: Bảng ban đầu có 50 bit đầu vào xếp theo cột 15 (trọng số cao, bên trái) đến cột 3 (trọng số thấp, bên phải)." },
+      { caption: "Bước 2/3: Các cột 6..12 đang cao hơn 2 bit (cột 7 và 8 cao nhất tới 9 bit). Bit nhớ từ FA/HA sẽ đi sang TRÁI một cột (c → c+1)." },
+      { caption: "Bước 3/3: Mục tiêu: mỗi cột còn tối đa 2 bit sau 6 tầng, dùng ít bộ cộng nhất (số tầng 6 là tham số chọn trước)." }
+    ],
+    2: [
+      { caption: "Bước 1/5 (FA): Một bộ Full Adder (FA) lấy 3 bit trong cùng một cột." },
+      { caption: "Bước 2/5 (FA): 3 chấm gộp lại → 1 chấm tổng ở lại cột + 1 chấm nhớ bay sang cột BÊN TRÁI. Tổng số bit: 3 → 2, giảm 1." },
+      { caption: "Bước 3/5 (HA): Một bộ Half Adder (HA) lấy 2 bit trong cùng một cột." },
+      { caption: "Bước 4/5 (HA): 2 chấm gộp lại → 1 chấm tổng ở lại cột + 1 chấm nhớ bay sang cột BÊN TRÁI. Tổng số bit: 2 → 2, không đổi." },
+      { caption: "Bước 5/5 (Luật trễ tầng): FA giảm 1 bit, HA không giảm. Bit sinh ra ở tầng s (tổng và nhớ) CHỈ dùng từ tầng s+1 trở đi." }
+    ],
+    3: [
+      { caption: "Ban đầu (H0): Có 50 bit. Đã dùng 0 FA. Chọn cột bất kỳ bên dưới để soi công thức (mặc định đang soi Cột 8)." },
+      { caption: "Tầng 1 — Khoanh nhóm: Chọn 6 nhóm FA (c7:2, c8:1, c10:1, c11:1, c12:1). Chưa sinh bit mới trong tầng này." },
+      { caption: "Tầng 1 — Gộp & bay nhớ: 6 FA tạo 6 bit tổng ở lại + 6 bit nhớ bay sang trái → còn 44 bit (Tổng FA = 6)." },
+      { caption: "Tầng 2 — Khoanh nhóm: Trên bảng H1 (44 bit), khoanh 9 nhóm FA (c6:1, c8:3, c9:2, c10:1, c11:1, c13:1)." },
+      { caption: "Tầng 2 — Gộp & bay nhớ: 9 FA hoàn tất → còn 35 bit (Tổng FA = 15). Cột 8 giảm mạnh từ 9 xuống 3 bit." },
+      { caption: "Tầng 3 — Khoanh nhóm: Trên bảng H2 (35 bit), khoanh 4 nhóm FA (c8:1, c9:2, c10:1)." },
+      { caption: "Tầng 3 — Gộp & bay nhớ: 4 FA hoàn tất → còn 31 bit (Tổng FA = 19). Cột 8 còn 1 bit (xanh)." },
+      { caption: "Tầng 4 — Khoanh nhóm: Trên bảng H3 (31 bit), khoanh 4 nhóm FA (c7:2, c9:1, c11:1)." },
+      { caption: "Tầng 4 — Gộp & bay nhớ: 4 FA hoàn tất → còn 27 bit (Tổng FA = 23). Nhớ từ cột 7 làm cột 8 tăng lại 3 bit." },
+      { caption: "Tầng 5 — Khoanh nhóm: Trên bảng H4 (27 bit), khoanh 3 nhóm FA (c6:2, c8:1)." },
+      { caption: "Tầng 5 — Gộp & bay nhớ: 3 FA hoàn tất → còn 24 bit (Tổng FA = 26). Chỉ còn cột 7, 10, 12 vượt quá 2 bit." },
+      { caption: "Tầng 6 — Khoanh nhóm: Trên bảng H5 (24 bit), khoanh 3 nhóm FA cuối cùng (c7:1, c10:1, c12:1)." },
+      { caption: "Tầng 6 — Hoàn tất (H6): Còn 21 bit, Tổng FA = 29, 0 HA. Toàn bộ 13 cột đều ≤ 2 bit (tất cả chuyển xanh) ✓" }
+    ],
+    4: [
+      { caption: "Bước 1/4: Đếm bảo toàn bit — Ban đầu 50 bit, cuối tầng 6 còn 21 bit. Mỗi FA bớt đúng 1 bit nên cần ít nhất 50 − 21 = 29 FA." },
+      { caption: "Bước 2/4: So sánh 3 mức chi phí — Cận dưới LP (cho phép số thập phân) = 29.0; nghiệm nguyên của ta cũng đạt đúng 29.0." },
+      { caption: "Bước 3/4: Nếu ép bớt 1 FA (còn 28 FA) để giữ 22 bit cuối, phải bù thêm 3 HA → chi phí 28 + 3×0.6 = 29.8 (đắt hơn +0.8)." },
+      { caption: "Bước 4/4: Kết luận — Không cách nào dưới 29.0; nghiệm 29 FA + 0 HA chạm đúng 29.0 nên chắc chắn tối ưu." }
+    ],
+    5: [
+      { caption: "Ví dụ minh họa nhỏ (KHÔNG phải bài thật): 1 cột 5 bit, ràng buộc 2f + h ≥ 3, f ≥ 0, h ≥ 0, mục tiêu min f + 0.6h." },
+      { caption: "Bước 1 — Đơn hình (Simplex): Bắt đầu tại đỉnh (0, 3) chi phí 1.8 → trượt dọc cạnh 2f + h = 3 tới đỉnh (1.5, 0) chi phí 1.5 (cận dưới, f=1.5 chưa nguyên)." },
+      { caption: "Bước 2 — Chia nhánh: Cấm vùng 1 < f < 2, tách thành f ≤ 1 cho (1, 1) chi phí 1.6 và f ≥ 2 cho (2, 0) chi phí 2.0." },
+      { caption: "Bước 3 — Chọn 1.6: Vì cận dưới 1.5 < 1.6 nên phải xét hết nhánh mới chứng minh 1.6 tối ưu. Ở bài thật, HiGHS chạm ngay 29.0 ở nút gốc!" }
+    ]
+  };
+
+  function cancelTimers() {
+    if (state.rafId) {
+      cancelAnimationFrame(state.rafId);
+      state.rafId = null;
+    }
+    if (state.timerId) {
+      clearTimeout(state.timerId);
+      state.timerId = null;
+    }
+  }
+
+  function updateControlsUI() {
+    const steps = SCENE_STEPS[state.scene];
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", Number(btn.dataset.scene) === state.scene);
+    });
+    document.getElementById("step-counter").textContent = `Bước ${state.step + 1} / ${steps.length}`;
+    document.getElementById("caption-box").textContent = steps[state.step].caption;
+    document.getElementById("btn-prev").disabled = state.step <= 0;
+    document.getElementById("btn-next").disabled = state.step >= steps.length - 1;
+    const playBtn = document.getElementById("btn-play");
+    playBtn.textContent = state.playing ? "⏸ Tạm dừng" : "▶ Phát";
+    playBtn.classList.toggle("playing", state.playing);
+  }
+
+  function scheduleAutoAdvance() {
+    if (!state.playing) return;
+    const steps = SCENE_STEPS[state.scene];
+    if (state.step >= steps.length - 1) {
+      state.playing = false;
+      updateControlsUI();
+      return;
+    }
+    const baseDelay = state.scene === 3 ? 2100 : 2500;
+    state.timerId = setTimeout(() => {
+      if (!state.playing) return;
+      goToStep(state.step + 1, true);
+    }, baseDelay / state.speed);
+  }
+
+  function startAnimationIfNeeded() {
+    const animated =
+      (state.scene === 2 && (state.step === 1 || state.step === 3)) ||
+      (state.scene === 3 && state.step > 0 && state.step % 2 === 0) ||
+      (state.scene === 5 && state.step === 1);
+
+    if (!animated) {
+      state.animProgress = 1;
+      renderScene();
+      scheduleAutoAdvance();
+      return;
+    }
+
+    state.animProgress = 0;
+    const duration = 950 / state.speed;
+    const t0 = performance.now();
+
+    function tick(now) {
+      const raw = Math.min(1, (now - t0) / duration);
+      // easeInOutCubic
+      state.animProgress = raw < 0.5 ? 4 * raw * raw * raw : 1 - Math.pow(-2 * raw + 2, 3) / 2;
+      renderScene();
+      if (raw < 1) {
+        state.rafId = requestAnimationFrame(tick);
+      } else {
+        state.rafId = null;
+        scheduleAutoAdvance();
+      }
+    }
+    state.rafId = requestAnimationFrame(tick);
+  }
+
+  function goToStep(newStep, keepPlaying = false) {
+    cancelTimers();
+    const maxStep = SCENE_STEPS[state.scene].length - 1;
+    state.step = Math.max(0, Math.min(maxStep, newStep));
+    if (!keepPlaying) state.playing = false;
+    updateControlsUI();
+    startAnimationIfNeeded();
+  }
+
+  function switchScene(sceneNum) {
+    cancelTimers();
+    state.scene = sceneNum;
+    state.step = 0;
+    state.playing = false;
+    state.animProgress = 1;
+    updateControlsUI();
+    renderScene();
+  }
+
+  // =========================================================
+  // 5. VẼ CẢNH 1 — ĐỀ BÀI (50 BIT, CỘT 15 TRÁI .. CỘT 3 PHẢI)
+  // =========================================================
+  function renderScene1(root) {
+    const wrap = document.createElement("div");
+    wrap.className = "svg-wrap";
+    const W = 1200, H = 490;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}` });
+
+    // Mũi tên hướng bit nhớ ở trên
+    svg.appendChild(el("rect", { x: 240, y: 12, width: 720, height: 38, rx: 10, fill: "#1e293b", stroke: "#38bdf8", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: 600, y: 37, "text-anchor": "middle", fill: "#38bdf8", "font-size": 18, "font-weight": "700" },
+      "⬅  Bit nhớ (carry) từ cột c đi sang cột c+1 (tức sang TRÁI 1 cột)"));
+
+    const colCount = COLS_DISPLAY.length;
+    const startX = 76;
+    const stepX = 87;
+    const baseY = 415;
+    const rowGap = 33;
+
+    // Vạch đích <= 2 bit (từ bước 2 trở đi)
+    if (state.step >= 1) {
+      const targetY = baseY - 1.5 * rowGap;
+      svg.appendChild(el("line", {
+        x1: 30, y1: targetY, x2: 1170, y2: targetY,
+        stroke: "#ef4444", "stroke-width": 2.5, "stroke-dasharray": "9 6"
+      }));
+      svg.appendChild(el("rect", { x: 895, y: targetY - 34, width: 270, height: 28, rx: 6, fill: "#7f1d1d" }));
+      svg.appendChild(el("text", { x: 1030, y: targetY - 14, "text-anchor": "middle", fill: "#fecaca", "font-size": 16, "font-weight": "700" },
+        "Đích: mỗi cột ≤ 2 bit"));
+    }
+
+    COLS_DISPLAY.forEach((c, idx) => {
+      const cx = startX + idx * stepX;
+      const h = H_CALC[0][c];
+      const over = h > 2;
+
+      // Highlight cột cao ở bước 2 & 3
+      if (state.step >= 1 && over) {
+        svg.appendChild(el("rect", {
+          x: cx - 30, y: baseY - h * rowGap - 18, width: 60, height: h * rowGap + 30,
+          rx: 10, fill: "rgba(239, 68, 68, 0.12)", stroke: "#ef4444", "stroke-width": 1.8
+        }));
+      }
+
+      // Chiều cao cột
+      const hColor = state.step >= 1 ? (over ? "#fca5a5" : "#86efac") : "#fbbf24";
+      svg.appendChild(el("text", {
+        x: cx, y: baseY - h * rowGap - 24, "text-anchor": "middle",
+        fill: hColor, "font-size": 18, "font-weight": "700"
+      }, `${h}`));
+
+      // Các chấm bit
+      for (let k = 0; k < h; k++) {
+        const cy = baseY - k * rowGap;
+        const dotColor = state.step >= 1 && over ? "#f87171" : "#38bdf8";
+        svg.appendChild(el("circle", {
+          cx, cy, r: 12, fill: dotColor, stroke: "#0f172a", "stroke-width": 2
+        }));
+      }
+
+      // Nhãn cột
+      svg.appendChild(el("text", {
+        x: cx, y: baseY + 38, "text-anchor": "middle", fill: "#f8fafc", "font-size": 17, "font-weight": "700"
+      }, `c${c}`));
+    });
+
+    // Nhãn trọng số hai đầu
+    svg.appendChild(el("text", { x: startX, y: baseY + 64, "text-anchor": "middle", fill: "#93c5fd", "font-size": 16, "font-weight": "600" },
+      "Trọng số cao"));
+    svg.appendChild(el("text", { x: startX + (colCount - 1) * stepX, y: baseY + 64, "text-anchor": "middle", fill: "#93c5fd", "font-size": 16, "font-weight": "600" },
+      "Trọng số thấp"));
+
+    // Hộp thông số tổng quan
+    svg.appendChild(el("rect", { x: 910, y: 78, width: 265, height: 112, rx: 10, fill: "#1e293b", stroke: "#475569", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: 928, y: 110, fill: "#f8fafc", "font-size": 18, "font-weight": "700" }, "Tổng bit vào: 50 bit"));
+    svg.appendChild(el("text", { x: 928, y: 140, fill: "#fca5a5", "font-size": 17, "font-weight": "600" }, "Số cột vượt 2 bit: 7 cột"));
+    svg.appendChild(el("text", { x: 928, y: 170, fill: "#86efac", "font-size": 17, "font-weight": "600" }, "Mục tiêu: H[6][c] ≤ 2"));
+
+    wrap.appendChild(svg);
+    root.appendChild(wrap);
+  }
+
+  // =========================================================
+  // 6. VẼ CẢNH 2 — HAI LUẬT BỘ CỘNG (FA VÀ HA)
+  // =========================================================
+  function renderScene2(root) {
+    const wrap = document.createElement("div");
+    wrap.className = "svg-wrap";
+    const W = 1200, H = 470;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}` });
+
+    const p = state.animProgress;
+    const isFA = state.step <= 1;
+    const isHA = state.step === 2 || state.step === 3;
+    const isSummary = state.step === 4;
+
+    // Cột trái (c+1) và cột phải (c)
+    const xLeft = 360;
+    const xRight = 610;
+    const baseY = 360;
+    const gapY = 56;
+
+    // Khung cột
+    svg.appendChild(el("rect", { x: xLeft - 75, y: 75, width: 150, height: 330, rx: 12, fill: "#0f172a", stroke: "#475569", "stroke-width": 2 }));
+    svg.appendChild(el("rect", { x: xRight - 75, y: 75, width: 150, height: 330, rx: 12, fill: "#0f172a", stroke: "#38bdf8", "stroke-width": 2.5 }));
+    svg.appendChild(el("text", { x: xLeft, y: 438, "text-anchor": "middle", fill: "#cbd5e1", "font-size": 18, "font-weight": "700" }, "Cột c+1 (bên trái)"));
+    svg.appendChild(el("text", { x: xRight, y: 438, "text-anchor": "middle", fill: "#38bdf8", "font-size": 18, "font-weight": "700" }, "Cột c (đang xét)"));
+
+    if (isFA) {
+      const title = "FULL ADDER (FA): 3 bit cùng cột → 1 tổng + 1 nhớ sang trái";
+      svg.appendChild(el("text", { x: 485, y: 44, "text-anchor": "middle", fill: "#fbbf24", "font-size": 21, "font-weight": "700" }, title));
+
+      const ys = [baseY, baseY - gapY, baseY - 2 * gapY];
+      if (state.step === 0) {
+        // Khoanh 3 chấm
+        svg.appendChild(el("rect", {
+          x: xRight - 36, y: ys[2] - 32, width: 72, height: 2 * gapY + 64,
+          rx: 14, fill: "rgba(239, 68, 68, 0.14)", stroke: "#ef4444", "stroke-width": 3
+        }));
+        ys.forEach((y) => {
+          svg.appendChild(el("circle", { cx: xRight, cy: y, r: 18, fill: "#38bdf8", stroke: "#fff", "stroke-width": 2 }));
+        });
+        svg.appendChild(el("text", { x: xRight + 95, y: ys[1] + 6, fill: "#fca5a5", "font-size": 18, "font-weight": "700" }, "3 bit đầu vào"));
+      } else {
+        // Gộp -> 1 tổng ở lại xRight, 1 nhớ bay sang xLeft
+        const midY = ys[1];
+        if (p < 0.35) {
+          const k = p / 0.35;
+          ys.forEach((y) => {
+            const cy = y + (midY - y) * k;
+            svg.appendChild(el("circle", { cx: xRight, cy, r: 18, fill: "#38bdf8", stroke: "#fff", "stroke-width": 2, opacity: 1 - k * 0.4 }));
+          });
+        } else {
+          const k = (p - 0.35) / 0.65;
+          // Chấm tổng tại cột c
+          const sumY = midY + (baseY - midY) * k;
+          svg.appendChild(el("circle", { cx: xRight, cy: sumY, r: 19, fill: "#22c55e", stroke: "#fff", "stroke-width": 2.5 }));
+          svg.appendChild(el("text", { x: xRight, y: sumY + 38, "text-anchor": "middle", fill: "#86efac", "font-size": 17, "font-weight": "700" }, "Tổng (1 bit)"));
+
+          // Chấm nhớ bay theo cung sang cột c+1
+          const cxCarry = xRight + (xLeft - xRight) * k;
+          const cyCarry = midY + (baseY - midY) * k - Math.sin(Math.PI * k) * 90;
+          svg.appendChild(el("circle", { cx: cxCarry, cy: cyCarry, r: 19, fill: "#c084fc", stroke: "#fff", "stroke-width": 2.5 }));
+          if (k > 0.7) {
+            svg.appendChild(el("text", { x: xLeft, y: baseY + 38, "text-anchor": "middle", fill: "#e9d5ff", "font-size": 17, "font-weight": "700" }, "Nhớ (1 bit)"));
+          }
+        }
+      }
+
+      // Bộ đếm FA bên phải
+      svg.appendChild(el("rect", { x: 760, y: 110, width: 410, height: 225, rx: 12, fill: "#1e293b", stroke: "#22c55e", "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: 785, y: 152, fill: "#fbbf24", "font-size": 20, "font-weight": "700" }, "Hiệu ứng của 1 bộ FA:"));
+      const countText = state.step === 0 ? "Tổng số bit: 3 (chưa gộp)" : (p < 0.5 ? "Tổng số bit: 3 → đang gộp..." : "Tổng số bit: 3 → 2, giảm 1");
+      svg.appendChild(el("text", { x: 785, y: 196, fill: "#86efac", "font-size": 21, "font-weight": "700" }, countText));
+      svg.appendChild(el("text", { x: 785, y: 242, fill: "#f8fafc", "font-size": 17 }, "• Cột c bớt 2 bit (3 vào → 1 tổng ở lại)"));
+      svg.appendChild(el("text", { x: 785, y: 274, fill: "#f8fafc", "font-size": 17 }, "• Cột c+1 bên trái nhận thêm 1 bit nhớ"));
+      svg.appendChild(el("text", { x: 785, y: 306, fill: "#38bdf8", "font-size": 17, "font-weight": "700" }, "• Chi phí trong ILP: 1.0"));
+    } else if (isHA) {
+      const title = "HALF ADDER (HA): 2 bit cùng cột → 1 tổng + 1 nhớ sang trái";
+      svg.appendChild(el("text", { x: 485, y: 44, "text-anchor": "middle", fill: "#fb923c", "font-size": 21, "font-weight": "700" }, title));
+
+      const ys = [baseY, baseY - gapY];
+      if (state.step === 2) {
+        svg.appendChild(el("rect", {
+          x: xRight - 36, y: ys[1] - 32, width: 72, height: gapY + 64,
+          rx: 14, fill: "rgba(251, 146, 60, 0.16)", stroke: "#fb923c", "stroke-width": 3
+        }));
+        ys.forEach((y) => {
+          svg.appendChild(el("circle", { cx: xRight, cy: y, r: 18, fill: "#38bdf8", stroke: "#fff", "stroke-width": 2 }));
+        });
+        svg.appendChild(el("text", { x: xRight + 95, y: (ys[0] + ys[1]) / 2 + 6, fill: "#fdba74", "font-size": 18, "font-weight": "700" }, "2 bit đầu vào"));
+      } else {
+        const midY = (ys[0] + ys[1]) / 2;
+        if (p < 0.35) {
+          const k = p / 0.35;
+          ys.forEach((y) => {
+            const cy = y + (midY - y) * k;
+            svg.appendChild(el("circle", { cx: xRight, cy, r: 18, fill: "#38bdf8", stroke: "#fff", "stroke-width": 2, opacity: 1 - k * 0.4 }));
+          });
+        } else {
+          const k = (p - 0.35) / 0.65;
+          const sumY = midY + (baseY - midY) * k;
+          svg.appendChild(el("circle", { cx: xRight, cy: sumY, r: 19, fill: "#22c55e", stroke: "#fff", "stroke-width": 2.5 }));
+          svg.appendChild(el("text", { x: xRight, y: sumY + 38, "text-anchor": "middle", fill: "#86efac", "font-size": 17, "font-weight": "700" }, "Tổng (1 bit)"));
+
+          const cxCarry = xRight + (xLeft - xRight) * k;
+          const cyCarry = midY + (baseY - midY) * k - Math.sin(Math.PI * k) * 90;
+          svg.appendChild(el("circle", { cx: cxCarry, cy: cyCarry, r: 19, fill: "#c084fc", stroke: "#fff", "stroke-width": 2.5 }));
+          if (k > 0.7) {
+            svg.appendChild(el("text", { x: xLeft, y: baseY + 38, "text-anchor": "middle", fill: "#e9d5ff", "font-size": 17, "font-weight": "700" }, "Nhớ (1 bit)"));
+          }
+        }
+      }
+
+      svg.appendChild(el("rect", { x: 760, y: 110, width: 410, height: 225, rx: 12, fill: "#1e293b", stroke: "#fb923c", "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: 785, y: 152, fill: "#fb923c", "font-size": 20, "font-weight": "700" }, "Hiệu ứng của 1 bộ HA:"));
+      const countText = state.step === 2 ? "Tổng số bit: 2 (chưa gộp)" : (p < 0.5 ? "Tổng số bit: 2 → đang gộp..." : "Tổng số bit: 2 → 2, không đổi");
+      svg.appendChild(el("text", { x: 785, y: 196, fill: "#fde68a", "font-size": 21, "font-weight": "700" }, countText));
+      svg.appendChild(el("text", { x: 785, y: 242, fill: "#f8fafc", "font-size": 17 }, "• Cột c bớt 1 bit (2 vào → 1 tổng ở lại)"));
+      svg.appendChild(el("text", { x: 785, y: 274, fill: "#f8fafc", "font-size": 17 }, "• Cột c+1 bên trái nhận thêm 1 bit nhớ"));
+      svg.appendChild(el("text", { x: 785, y: 306, fill: "#38bdf8", "font-size": 17, "font-weight": "700" }, "• Chi phí trong ILP: 0.6 (nhưng không giảm tổng bit)"));
+    } else if (isSummary) {
+      // Tổng kết 2 luật + trễ tầng
+      svg.appendChild(el("rect", { x: 40, y: 40, width: 540, height: 185, rx: 12, fill: "#1e293b", stroke: "#22c55e", "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: 65, y: 80, fill: "#86efac", "font-size": 21, "font-weight": "700" }, "1. So sánh FA và HA:"));
+      svg.appendChild(el("text", { x: 65, y: 118, fill: "#f8fafc", "font-size": 18 }, "• FA (3 → 2): tổng số bit toàn bảng GIẢM 1."));
+      svg.appendChild(el("text", { x: 65, y: 152, fill: "#f8fafc", "font-size": 18 }, "• HA (2 → 2): tổng số bit toàn bảng KHÔNG ĐỔI."));
+      svg.appendChild(el("text", { x: 65, y: 186, fill: "#fbbf24", "font-size": 17, "font-weight": "600" }, "→ Muốn rút từ 50 bit xuống 21 bit cần tối thiểu 29 FA."));
+
+      svg.appendChild(el("rect", { x: 620, y: 40, width: 540, height: 185, rx: 12, fill: "#1e293b", stroke: "#ef4444", "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: 645, y: 80, fill: "#fca5a5", "font-size": 21, "font-weight": "700" }, "2. Luật phân tầng (không dùng cùng tầng):"));
+      svg.appendChild(el("text", { x: 645, y: 118, fill: "#f8fafc", "font-size": 18 }, "• Bit tổng và bit nhớ sinh ra ở tầng s"));
+      svg.appendChild(el("text", { x: 645, y: 152, fill: "#fbbf24", "font-size": 18, "font-weight": "700" }, "  CHỈ được dùng từ tầng s+1 trở đi."));
+      svg.appendChild(el("text", { x: 645, y: 186, fill: "#cbd5e1", "font-size": 17 }, "→ Trong tầng s chỉ dùng tối đa số bit sẵn có H[s][c]."));
+
+      svg.appendChild(el("rect", { x: 40, y: 255, width: 1120, height: 175, rx: 12, fill: "#0f172a", stroke: "#38bdf8", "stroke-width": 2 }));
+      svg.appendChild(el("text", { x: 68, y: 295, fill: "#38bdf8", "font-size": 20, "font-weight": "700" }, "Hai phương trình ILP trực tiếp từ quy tắc vật lý trên:"));
+      svg.appendChild(el("text", { x: 68, y: 338, fill: "#f8fafc", "font-size": 19, "font-weight": "600" },
+        "Luật 1 (Đủ bit đầu vào):   3·f[s][c] + 2·h[s][c] ≤ H[s][c]"));
+      svg.appendChild(el("text", { x: 68, y: 382, fill: "#f8fafc", "font-size": 19, "font-weight": "600" },
+        "Luật 2 (Cập nhật chiều cao): H[s+1][c] = H[s][c] − 2·f[s][c] − h[s][c] + (f[s][c−1] + h[s][c−1])"));
+    }
+
+    wrap.appendChild(svg);
+    root.appendChild(wrap);
+  }
+
+  // =========================================================
+  // 7. VẼ CẢNH 3 — CHẠY 6 TẦNG (CẢNH CHÍNH + SOI 1 CỘT)
+  // =========================================================
+  function renderScene3(root) {
+    // Xác định tầng hiện tại và pha
+    // step 0: H0
+    // step 1,2: tầng 1 (s=0) pha khoanh / pha gộp
+    // ...
+    // step 11,12: tầng 6 (s=5) pha khoanh / pha gộp
+    const isInitial = state.step === 0;
+    const sIdx = isInitial ? 0 : Math.floor((state.step - 1) / 2); // 0..5
+    const isGroupPhase = !isInitial && (state.step % 2 === 1);
+    const isMergePhase = !isInitial && (state.step % 2 === 0);
+    const p = state.animProgress;
+
+    const displayedStageForTotals = isInitial ? 0 : (isGroupPhase ? sIdx : sIdx + 1);
+    const faUsed = cumFaCount[displayedStageForTotals];
+    const bitsLeft = totalBitsAtStage[displayedStageForTotals];
+
+    // Thanh bộ đếm & nút chọn nhanh tầng
+    const topBar = document.createElement("div");
+    topBar.className = "scene3-top-bar";
+
+    const counters = document.createElement("div");
+    counters.className = "counters-row";
+    counters.innerHTML = `
+      <div class="counter-pill" style="border-color:#fbbf24;">
+        Tổng FA đã dùng: <span class="val" style="color:#fbbf24;">${faUsed} / 29</span>
+        <span style="font-size:16px;color:#cbd5e1;font-weight:500;"> (0 HA)</span>
+      </div>
+      <div class="counter-pill" style="border-color:${bitsLeft === 21 ? '#22c55e' : '#38bdf8'};">
+        Tổng bit còn lại: <span class="val" style="color:${bitsLeft === 21 ? '#22c55e' : '#38bdf8'};">${bitsLeft}</span>
+        <span style="font-size:16px;color:#cbd5e1;font-weight:500;"> / 50</span>
+      </div>
+    `;
+    topBar.appendChild(counters);
+
+    const quick = document.createElement("div");
+    quick.className = "stage-quick-btns";
+    const quickTargets = [
+      { label: "H0", step: 0 },
+      { label: "Tầng 1", step: 2 },
+      { label: "Tầng 2", step: 4 },
+      { label: "Tầng 3", step: 6 },
+      { label: "Tầng 4", step: 8 },
+      { label: "Tầng 5", step: 10 },
+      { label: "Tầng 6", step: 12 }
+    ];
+    quickTargets.forEach((qt) => {
+      const b = document.createElement("button");
+      b.className = "q-btn" + (
+        (qt.step === 0 && state.step === 0) ||
+        (qt.step > 0 && (state.step === qt.step || state.step === qt.step - 1))
+          ? " active" : ""
+      );
+      b.textContent = qt.label;
+      b.onclick = () => goToStep(qt.step);
+      quick.appendChild(b);
+    });
+    topBar.appendChild(quick);
+    root.appendChild(topBar);
+
+    // Chú thích màu
+    const legend = document.createElement("div");
+    legend.className = "legend-row";
+    legend.innerHTML = `
+      <div class="legend-item"><span class="dot-swatch" style="background:#38bdf8;"></span> Bit cũ / chưa gộp</div>
+      <div class="legend-item"><span class="box-swatch"></span> Nhóm 3 bit gộp thành 1 FA</div>
+      <div class="legend-item"><span class="dot-swatch" style="background:#22c55e;"></span> Bit tổng mới (ở lại cột)</div>
+      <div class="legend-item"><span class="dot-swatch" style="background:#c084fc;"></span> Bit nhớ mới (bay sang cột trái c+1)</div>
+      <div class="legend-item" style="margin-left:auto;color:#fbbf24;font-weight:700;">Nhấp vào một cột bất kỳ để soi phép tính</div>
+    `;
+    root.appendChild(legend);
+
+    // SVG cột bit
+    const wrap = document.createElement("div");
+    wrap.className = "svg-wrap";
+    const W = 1200, H = 415;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}` });
+
+    const startX = 76;
+    const stepX = 87;
+    const baseY = 345;
+    const rowGap = 31;
+    const xOf = {};
+    COLS_DISPLAY.forEach((c, i) => { xOf[c] = startX + i * stepX; });
+
+    // Đường đích <= 2 bit
+    const targetY = baseY - 1.5 * rowGap;
+    svg.appendChild(el("line", {
+      x1: 28, y1: targetY, x2: 1172, y2: targetY,
+      stroke: "#ef4444", "stroke-width": 2, "stroke-dasharray": "8 6"
+    }));
+    svg.appendChild(el("text", { x: 1168, y: targetY - 10, "text-anchor": "end", fill: "#fca5a5", "font-size": 16, "font-weight": "700" },
+      "Đích ≤ 2 bit"));
+
+    // Xác định chiều cao hiển thị của mỗi cột để tô màu đỏ (>2) hay xanh (<=2)
+    const activeHeights = {};
+    COLS_ASC.forEach((c) => {
+      if (isInitial) activeHeights[c] = H_CALC[0][c];
+      else if (isGroupPhase) activeHeights[c] = H_CALC[sIdx][c];
+      else activeHeights[c] = (p >= 0.85) ? H_CALC[sIdx + 1][c] : H_CALC[sIdx][c];
+    });
+
+    // Vẽ nền từng cột + sự kiện click để Soi 1 cột
+    COLS_DISPLAY.forEach((c) => {
+      const cx = xOf[c];
+      const hVal = activeHeights[c];
+      const isOver = hVal > 2;
+      const isInspected = c === state.inspectedCol;
+
+      const colGroup = el("g", { style: "cursor: pointer;" });
+      colGroup.addEventListener("click", () => {
+        state.inspectedCol = c;
+        renderScene();
+      });
+
+      const boxFill = isInspected ? "rgba(251, 191, 36, 0.14)" : (isOver ? "rgba(239, 68, 68, 0.08)" : "rgba(34, 197, 94, 0.08)");
+      const boxStroke = isInspected ? "#fbbf24" : (isOver ? "#ef4444" : "#22c55e");
+      const boxWidth = isInspected ? 3 : 1.6;
+
+      colGroup.appendChild(el("rect", {
+        x: cx - 34, y: 24, width: 68, height: baseY - 4,
+        rx: 9, fill: boxFill, stroke: boxStroke, "stroke-width": boxWidth
+      }));
+
+      // Nhãn chiều cao trên đầu cột
+      colGroup.appendChild(el("text", {
+        x: cx, y: 48, "text-anchor": "middle",
+        fill: isOver ? "#fca5a5" : "#86efac", "font-size": 20, "font-weight": "700"
+      }, `${hVal}`));
+
+      // Nhãn tên cột phía dưới
+      colGroup.appendChild(el("text", {
+        x: cx, y: baseY + 46, "text-anchor": "middle",
+        fill: isInspected ? "#fbbf24" : (isOver ? "#fca5a5" : "#86efac"),
+        "font-size": 17, "font-weight": "700"
+      }, `c${c}`));
+
+      svg.appendChild(colGroup);
+    });
+
+    // Vẽ chấm theo từng pha
+    if (isInitial) {
+      COLS_DISPLAY.forEach((c) => {
+        const cx = xOf[c];
+        const h = H_CALC[0][c];
+        for (let k = 0; k < h; k++) {
+          svg.appendChild(el("circle", {
+            cx, cy: baseY - k * rowGap, r: 11, fill: "#38bdf8", stroke: "#0f172a", "stroke-width": 1.8
+          }));
+        }
+      });
+    } else if (isGroupPhase) {
+      // H[sIdx] + khoanh đỏ từng nhóm 3 chấm theo fTable[sIdx][c]
+      COLS_DISPLAY.forEach((c) => {
+        const cx = xOf[c];
+        const h = H_CALC[sIdx][c];
+        const nFa = fTable[sIdx][c];
+        for (let k = 0; k < h; k++) {
+          svg.appendChild(el("circle", {
+            cx, cy: baseY - k * rowGap, r: 11, fill: "#38bdf8", stroke: "#0f172a", "stroke-width": 1.8
+          }));
+        }
+        for (let g = 0; g < nFa; g++) {
+          const kBottom = g * 3;
+          const kTop = kBottom + 2;
+          const yTop = baseY - kTop * rowGap - 16;
+          const boxH = 2 * rowGap + 32;
+          svg.appendChild(el("rect", {
+            x: cx - 22, y: yTop, width: 44, height: boxH,
+            rx: 8, fill: "rgba(239, 68, 68, 0.16)", stroke: "#ef4444", "stroke-width": 2.6
+          }));
+        }
+      });
+    } else if (isMergePhase) {
+      // Đếm vị trí đích trong H[sIdx + 1] cho mỗi cột:
+      // Thứ tự xếp từ dưới lên trong H[sIdx + 1][c]:
+      // 1) các bit giữ nguyên từ H[sIdx][c] (số lượng = H[sIdx][c] - 3*f[sIdx][c])
+      // 2) các bit tổng mới tạo tại cột c (số lượng = f[sIdx][c])
+      // 3) các bit nhớ nhận từ cột c-1 (số lượng = f[sIdx][c-1])
+      COLS_DISPLAY.forEach((c) => {
+        const cx = xOf[c];
+        const hPrev = H_CALC[sIdx][c];
+        const nFa = fTable[sIdx][c];
+        const keptCount = hPrev - 3 * nFa;
+
+        // 1) Các bit giữ nguyên: từ vị trí cũ k = 3*nFa .. hPrev-1 trượt xuống k' = 0 .. keptCount-1
+        for (let i = 0; i < keptCount; i++) {
+          const oldK = 3 * nFa + i;
+          const oldY = baseY - oldK * rowGap;
+          const newY = baseY - i * rowGap;
+          const cy = oldY + (newY - oldY) * p;
+          svg.appendChild(el("circle", {
+            cx, cy, r: 11, fill: "#38bdf8", stroke: "#0f172a", "stroke-width": 1.8
+          }));
+        }
+
+        // 2) & 3) Các nhóm FA gộp lại -> sum & carry
+        for (let g = 0; g < nFa; g++) {
+          const midK = g * 3 + 1;
+          const midY = baseY - midK * rowGap;
+
+          if (p < 0.3) {
+            const k = p / 0.3;
+            for (let m = 0; m < 3; m++) {
+              const srcY = baseY - (g * 3 + m) * rowGap;
+              const cy = srcY + (midY - srcY) * k;
+              svg.appendChild(el("circle", {
+                cx, cy, r: 11, fill: "#38bdf8", stroke: "#ef4444", "stroke-width": 2, opacity: 1 - k * 0.35
+              }));
+            }
+          } else {
+            const k = (p - 0.3) / 0.7;
+            // Bit tổng ở lại cột c tại chỉ số keptCount + g
+            const targetSumK = keptCount + g;
+            const targetSumY = baseY - targetSumK * rowGap;
+            const curSumY = midY + (targetSumY - midY) * k;
+            svg.appendChild(el("circle", {
+              cx, cy: curSumY, r: 11.5, fill: "#22c55e", stroke: "#ffffff", "stroke-width": 2
+            }));
+
+            // Bit nhớ bay sang cột c+1 (bên trái)
+            const cLeft = c + 1;
+            const leftPrevKept = H_CALC[sIdx][cLeft] - 3 * fTable[sIdx][cLeft];
+            const leftSumCount = fTable[sIdx][cLeft];
+            const targetCarryK = leftPrevKept + leftSumCount + g;
+            const targetCarryY = baseY - targetCarryK * rowGap;
+            const targetCarryX = xOf[cLeft];
+
+            const curCarryX = cx + (targetCarryX - cx) * k;
+            const curCarryY = midY + (targetCarryY - midY) * k - Math.sin(Math.PI * k) * 55;
+            svg.appendChild(el("circle", {
+              cx: curCarryX, cy: curCarryY, r: 11.5, fill: "#c084fc", stroke: "#ffffff", "stroke-width": 2
+            }));
+          }
+        }
+      });
+    }
+
+    wrap.appendChild(svg);
+    root.appendChild(wrap);
+
+    // Khung "Soi 1 cột"
+    const inspector = document.createElement("div");
+    inspector.className = "inspector";
+
+    const head = document.createElement("div");
+    head.className = "inspector-head";
+    head.innerHTML = `<div class="inspector-title">Soi 1 cột — Cột ${state.inspectedCol} (nhấp vào cột trên hình hoặc chọn nút):</div>`;
+
+    const selector = document.createElement("div");
+    selector.className = "col-selector";
+    COLS_DISPLAY.forEach((c) => {
+      const btn = document.createElement("button");
+      btn.className = "col-pill" + (c === state.inspectedCol ? " active" : "");
+      btn.textContent = `c${c}`;
+      btn.onclick = () => {
+        state.inspectedCol = c;
+        renderScene();
+      };
+      selector.appendChild(btn);
+    });
+    head.appendChild(selector);
+    inspector.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "inspector-body";
+
+    // Trái: phép tính chi tiết ở tầng đang xem
+    const c = state.inspectedCol;
+    const calcBox = document.createElement("div");
+    calcBox.className = "calc-box";
+
+    if (isInitial) {
+      calcBox.innerHTML = `
+        <div class="calc-line" style="color:#fbbf24;font-weight:700;">Trạng thái ban đầu H[0][c${c}] = ${H_CALC[0][c]} bit</div>
+        <div class="calc-line">• Chưa chạy tầng nào. Chọn "Bước tiếp" để xem tầng 1.</div>
+        <div class="calc-line">• Chuỗi chiều cao H0..H6 của Cột ${c}: <strong>${H_CALC.map((r) => r[c]).join(" → ")}</strong></div>
+      `;
+    } else {
+      const hIn = H_CALC[sIdx][c];
+      const f = fTable[sIdx][c];
+      const h = hTable[sIdx][c];
+      const cin = c > 3 ? (fTable[sIdx][c - 1] + hTable[sIdx][c - 1]) : 0;
+      const hOut = H_CALC[sIdx + 1][c];
+      const lhs1 = 3 * f + 2 * h;
+      const r1Ok = lhs1 <= hIn;
+
+      calcBox.innerHTML = `
+        <div class="calc-line" style="color:#fbbf24;font-weight:700;">Phép tính thật tại Cột ${c} — Tầng ${sIdx + 1}:</div>
+        <div class="calc-line">
+          <strong>Luật 1:</strong> 3×${f} ${h > 0 ? `+ 2×${h}` : ""} = ${lhs1} ≤ ${hIn}
+          <span class="ok-tag">${r1Ok ? "✓" : "✗"}</span>
+          <span style="color:#cbd5e1;"> (dùng ${f} FA, ${h} HA)</span>
+        </div>
+        <div class="calc-line">
+          <strong>Luật 2:</strong> ${hIn} − 2×${f} ${h > 0 ? `− ${h}` : ""} + ${cin} = <strong style="color:#38bdf8;">${hOut}</strong>
+          <span style="color:#c084fc;"> (nhớ từ c${c > 3 ? c - 1 : "—"} = ${cin})</span>
+        </div>
+        <div class="calc-line" style="color:#cbd5e1;">
+          H[0..6] của c${c}: <strong>${H_CALC.map((r) => r[c]).join(", ")}</strong>
+        </div>
+      `;
+    }
+    body.appendChild(calcBox);
+
+    // Phải: bảng 6 tầng của cột đang soi
+    const tbl = document.createElement("table");
+    tbl.className = "mini-table";
+    let rowsHtml = `
+      <thead>
+        <tr>
+          <th>Tầng</th>
+          <th>H trước</th>
+          <th>FA (f)</th>
+          <th>HA (h)</th>
+          <th>Nhớ từ c${c > 3 ? c - 1 : "—"}</th>
+          <th>H sau</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+    for (let s = 0; s < 6; s++) {
+      const hBefore = H_CALC[s][c];
+      const f = fTable[s][c];
+      const h = hTable[s][c];
+      const cin = c > 3 ? (fTable[s][c - 1] + hTable[s][c - 1]) : 0;
+      const hAfter = H_CALC[s + 1][c];
+      const activeCls = (!isInitial && s === sIdx) ? ' class="active-row"' : "";
+      rowsHtml += `
+        <tr${activeCls}>
+          <td>Tầng ${s + 1}</td>
+          <td>${hBefore}</td>
+          <td>${f}</td>
+          <td>${h}</td>
+          <td>${cin}</td>
+          <td style="color:${hAfter <= 2 ? '#86efac' : '#fca5a5'};font-weight:700;">${hAfter}</td>
+        </tr>
+      `;
+    }
+    rowsHtml += "</tbody>";
+    tbl.innerHTML = rowsHtml;
+    body.appendChild(tbl);
+
+    inspector.appendChild(body);
+    root.appendChild(inspector);
+  }
+
+  // =========================================================
+  // 8. VẼ CẢNH 4 — VÌ SAO ĐÚNG 29
+  // =========================================================
+  function renderScene4(root) {
+    const container = document.createElement("div");
+    container.className = "scene4-grid";
+
+    // Phép trừ bảo toàn bit
+    const eq = document.createElement("div");
+    eq.className = "equation-banner";
+    eq.innerHTML = `
+      <span style="color:#38bdf8;">50 bit đầu vào</span> −
+      <span style="color:#22c55e;">21 bit còn lại</span> =
+      <span style="color:#fbbf24;">29 FA</span>
+      <div style="font-size:16px;font-weight:500;color:#cbd5e1;margin-top:4px;">
+        (Mỗi FA giảm đúng 1 bit toàn bảng; mỗi HA giảm 0 bit nên HA không giúp rút gọn tổng bit)
+      </div>
+    `;
+    container.appendChild(eq);
+
+    // Biểu đồ 3 thanh chi phí
+    const wrap = document.createElement("div");
+    wrap.className = "svg-wrap";
+    const W = 1200, H = 310;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}` });
+
+    // Thang ngang từ 28.0 đến 30.2 để thấy rõ chênh lệch +0.8 so với sàn 29.0
+    const xMin = 28.0, xMax = 30.2;
+    const plotL = 480, plotR = 1130;
+    const scaleX = (v) => plotL + ((v - xMin) / (xMax - xMin)) * (plotR - plotL);
+
+    // Trục và vạch
+    [28.0, 28.5, 29.0, 29.5, 30.0].forEach((tick) => {
+      const tx = scaleX(tick);
+      svg.appendChild(el("line", { x1: tx, y1: 35, x2: tx, y2: 255, stroke: "#334155", "stroke-width": 1.5 }));
+      svg.appendChild(el("text", { x: tx, y: 282, "text-anchor": "middle", fill: "#cbd5e1", "font-size": 16 }, tick.toFixed(1)));
+    });
+
+    // Đường sàn 29.0
+    const floorX = scaleX(29.0);
+    if (state.step >= 1) {
+      svg.appendChild(el("rect", { x: plotL, y: 35, width: floorX - plotL, height: 220, fill: "rgba(239, 68, 68, 0.12)" }));
+      svg.appendChild(el("text", { x: (plotL + floorX) / 2, y: 150, "text-anchor": "middle", fill: "#fca5a5", "font-size": 16, "font-weight": "700" },
+        "Vùng bất khả thi"));
+      svg.appendChild(el("line", { x1: floorX, y1: 24, x2: floorX, y2: 262, stroke: "#ef4444", "stroke-width": 3, "stroke-dasharray": "8 5" }));
+      svg.appendChild(el("text", { x: floorX, y: 20, "text-anchor": "middle", fill: "#fca5a5", "font-size": 17, "font-weight": "700" }, "Sàn = 29.0"));
+    }
+
+    const bars = [
+      { showFrom: 1, y: 55, label: "Cận dưới LP (cho phép số thập phân)", val: 29.0, valText: "29.0", color: "#38bdf8" },
+      { showFrom: 1, y: 125, label: "Nghiệm nguyên: 29 FA + 0 HA", val: 29.0, valText: "29.0", color: "#22c55e" },
+      { showFrom: 2, y: 195, label: "Phương án giữ thêm 1 bit: 28 FA + 3 HA", val: 29.8, valText: "28 + 3×0.6 = 29.8", color: "#fb923c" }
+    ];
+
+    bars.forEach((b) => {
+      if (state.step < b.showFrom) return;
+      svg.appendChild(el("text", { x: plotL - 16, y: b.y + 27, "text-anchor": "end", fill: "#f8fafc", "font-size": 17, "font-weight": "600" }, b.label));
+      const bw = Math.max(10, scaleX(b.val) - plotL);
+      svg.appendChild(el("rect", { x: plotL, y: b.y, width: bw, height: 40, rx: 7, fill: b.color }));
+      svg.appendChild(el("text", { x: plotL + bw + 12, y: b.y + 27, fill: b.color, "font-size": 17, "font-weight": "700" }, b.valText));
+    });
+
+    wrap.appendChild(svg);
+    container.appendChild(wrap);
+
+    if (state.step >= 3) {
+      const concl = document.createElement("div");
+      concl.className = "conclusion-banner";
+      concl.textContent = "Không cách nào dưới 29.0; nghiệm của ta chạm đúng 29.0 nên tối ưu";
+      container.appendChild(concl);
+    }
+
+    root.appendChild(container);
+  }
+
+  // =========================================================
+  // 9. VẼ CẢNH 5 — SOLVER DÒ NGHIỆM (VÍ DỤ MINH HỌA NHỎ)
+  // =========================================================
+  function renderScene5(root) {
+    const warn = document.createElement("div");
+    warn.className = "demo-warning";
+    warn.textContent = "VÍ DỤ MINH HỌA NHỎ (KHÔNG PHẢI BÀI THẬT): 1 cột 5 bit, biến f (FA), h (HA), mục tiêu min f + 0.6h, ràng buộc 2f + h ≥ 3, f ≥ 0, h ≥ 0.";
+    root.appendChild(warn);
+
+    const wrap = document.createElement("div");
+    wrap.className = "svg-wrap";
+    const W = 1200, H = 435;
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}` });
+
+    // Bên trái: Mặt phẳng (f ngang, h dọc)
+    const ox = 95, oy = 370;
+    const scaleF = 200; // f from 0..2.5 => 500px
+    const scaleH = 95;  // h from 0..3.5 => 332.5px
+    const px = (f) => ox + f * scaleF;
+    const py = (h) => oy - h * scaleH;
+
+    // Lưới trục
+    [0, 0.5, 1, 1.5, 2, 2.5].forEach((fv) => {
+      svg.appendChild(el("line", { x1: px(fv), y1: py(0), x2: px(fv), y2: py(3.5), stroke: "#1e293b", "stroke-width": 1.5 }));
+      if (Number.isInteger(fv) || fv === 1.5) {
+        svg.appendChild(el("text", { x: px(fv), y: oy + 26, "text-anchor": "middle", fill: "#cbd5e1", "font-size": 16 }, String(fv)));
+      }
+    });
+    [0, 1, 2, 3].forEach((hv) => {
+      svg.appendChild(el("line", { x1: px(0), y1: py(hv), x2: px(2.5), y2: py(hv), stroke: "#1e293b", "stroke-width": 1.5 }));
+      svg.appendChild(el("text", { x: ox - 16, y: py(hv) + 6, "text-anchor": "end", fill: "#cbd5e1", "font-size": 16 }, String(hv)));
+    });
+
+    // Tô miền hợp lệ: 2f + h >= 3, f >= 0, h >= 0 trong khung [0..2.5] x [0..3.5]
+    // Các đỉnh của đa giác: (0, 3) -> (1.5, 0) -> (2.5, 0) -> (2.5, 3.5) -> (0, 3.5)
+    const polyPts = [
+      [0, 3], [1.5, 0], [2.5, 0], [2.5, 3.5], [0, 3.5]
+    ].map(([f, h]) => `${px(f)},${py(h)}`).join(" ");
+    svg.appendChild(el("polygon", { points: polyPts, fill: "rgba(56, 189, 248, 0.22)", stroke: "#38bdf8", "stroke-width": 2 }));
+
+    // Cạnh biên 2f + h = 3
+    svg.appendChild(el("line", { x1: px(0), y1: py(3), x2: px(1.5), y2: py(0), stroke: "#fbbf24", "stroke-width": 3 }));
+    svg.appendChild(el("text", { x: px(0.58), y: py(2.05), fill: "#fbbf24", "font-size": 17, "font-weight": "700" }, "2f + h = 3"));
+
+    // Nếu ở bước >= 2: tô vùng bị cắt 1 < f < 2 và vẽ hai đường chia nhánh f=1, f=2
+    if (state.step >= 2) {
+      svg.appendChild(el("rect", {
+        x: px(1), y: py(3.5), width: px(2) - px(1), height: oy - py(3.5),
+        fill: "rgba(239, 68, 68, 0.22)"
+      }));
+      svg.appendChild(el("line", { x1: px(1), y1: py(3.5), x2: px(1), y2: oy, stroke: "#ef4444", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+      svg.appendChild(el("line", { x1: px(2), y1: py(3.5), x2: px(2), y2: oy, stroke: "#ef4444", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+      svg.appendChild(el("text", { x: px(1), y: py(3.5) - 8, "text-anchor": "middle", fill: "#fca5a5", "font-size": 16, "font-weight": "700" }, "f ≤ 1"));
+      svg.appendChild(el("text", { x: px(2), y: py(3.5) - 8, "text-anchor": "middle", fill: "#fca5a5", "font-size": 16, "font-weight": "700" }, "f ≥ 2"));
+    }
+
+    // Trục chính
+    svg.appendChild(el("line", { x1: ox, y1: oy, x2: px(2.55), y2: oy, stroke: "#f8fafc", "stroke-width": 2.5 }));
+    svg.appendChild(el("line", { x1: ox, y1: oy, x2: ox, y2: py(3.55), stroke: "#f8fafc", "stroke-width": 2.5 }));
+    svg.appendChild(el("text", { x: px(2.5), y: oy + 50, "text-anchor": "end", fill: "#f8fafc", "font-size": 17, "font-weight": "700" }, "f (số FA)"));
+    svg.appendChild(el("text", { x: ox - 10, y: py(3.55) - 10, "text-anchor": "start", fill: "#f8fafc", "font-size": 17, "font-weight": "700" }, "h (số HA)"));
+
+    // Các đỉnh cơ bản (0,3) và (1.5,0)
+    svg.appendChild(el("circle", { cx: px(0), cy: py(3), r: 8, fill: "#fbbf24", stroke: "#0f172a", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: px(0) + 12, y: py(3) + 6, fill: "#fde68a", "font-size": 16, "font-weight": "700" }, "(0, 3): 1.8"));
+
+    svg.appendChild(el("circle", { cx: px(1.5), cy: py(0), r: 8, fill: "#ef4444", stroke: "#fff", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: px(1.5), y: py(0) - 14, "text-anchor": "middle", fill: "#fca5a5", "font-size": 16, "font-weight": "700" }, "(1.5, 0): 1.5"));
+
+    // Bước 1: Hoạt họa điểm trượt đơn hình từ (0,3) -> (1.5,0)
+    if (state.step === 1) {
+      const p = state.animProgress;
+      const curF = 0 + 1.5 * p;
+      const curH = 3 - 3 * p;
+      const curCost = (curF + 0.6 * curH).toFixed(2);
+      svg.appendChild(el("circle", { cx: px(curF), cy: py(curH), r: 12, fill: "#22c55e", stroke: "#ffffff", "stroke-width": 3 }));
+      svg.appendChild(el("rect", { x: px(curF) + 14, y: py(curH) - 24, width: 132, height: 32, rx: 6, fill: "#0f172a", stroke: "#22c55e", "stroke-width": 1.8 }));
+      svg.appendChild(el("text", { x: px(curF) + 80, y: py(curH) - 3, "text-anchor": "middle", fill: "#86efac", "font-size": 16, "font-weight": "700" }, `chi phí: ${curCost}`));
+    }
+
+    // Bước 2 & 3: Các điểm nguyên (1,1) và (2,0)
+    if (state.step >= 2) {
+      const winColor = state.step === 3 ? "#22c55e" : "#38bdf8";
+      svg.appendChild(el("circle", { cx: px(1), cy: py(1), r: state.step === 3 ? 12 : 9, fill: winColor, stroke: "#fff", "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: px(1) - 14, y: py(1) - 14, "text-anchor": "end", fill: "#86efac", "font-size": 17, "font-weight": "700" }, "(1, 1): 1.6 ✓"));
+
+      svg.appendChild(el("circle", { cx: px(2), cy: py(0), r: 9, fill: "#fb923c", stroke: "#fff", "stroke-width": 2 }));
+      svg.appendChild(el("text", { x: px(2) + 12, y: py(0) - 12, fill: "#fdba74", "font-size": 17, "font-weight": "700" }, "(2, 0): 2.0"));
+    }
+
+    // Bên phải: Cây chia nhánh & giải thích từng bước
+    const rx = 640;
+    svg.appendChild(el("rect", { x: rx, y: 16, width: 535, height: 398, rx: 12, fill: "#0f172a", stroke: "#475569", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: rx + 267, y: 48, "text-anchor": "middle", fill: "#38bdf8", "font-size": 19, "font-weight": "700" }, "Cây Đơn hình & Chia nhánh (Branch & Bound)"));
+
+    // Nút gốc
+    svg.appendChild(el("rect", { x: rx + 110, y: 70, width: 315, height: 64, rx: 10, fill: "#1e293b", stroke: "#fbbf24", "stroke-width": 2 }));
+    svg.appendChild(el("text", { x: rx + 267, y: 97, "text-anchor": "middle", fill: "#fde68a", "font-size": 17, "font-weight": "700" }, "Nút gốc (LP nới lỏng): (1.5, 0)"));
+    svg.appendChild(el("text", { x: rx + 267, y: 122, "text-anchor": "middle", fill: "#fca5a5", "font-size": 16 }, "Cận dưới = 1.5 (f=1.5 không nguyên)"));
+
+    if (state.step >= 1) {
+      svg.appendChild(el("rect", { x: rx + 20, y: 148, width: 495, height: 54, rx: 8, fill: "#172554", stroke: "#38bdf8", "stroke-width": 1.5 }));
+      svg.appendChild(el("text", { x: rx + 32, y: 171, fill: "#f8fafc", "font-size": 16, "font-weight": "600" },
+        "Bản nới lỏng: tối ưu 1.5 nhưng f=1.5 không nguyên → chưa xây được;"));
+      svg.appendChild(el("text", { x: rx + 32, y: 193, fill: "#fbbf24", "font-size": 16, "font-weight": "700" },
+        "1.5 là cận dưới (mọi nghiệm nguyên đều ≥ 1.5)."));
+    }
+
+    if (state.step >= 2) {
+      // Mũi tên nhánh
+      svg.appendChild(el("line", { x1: rx + 200, y1: 202, x2: rx + 140, y2: 245, stroke: "#cbd5e1", "stroke-width": 2 }));
+      svg.appendChild(el("line", { x1: rx + 335, y1: 202, x2: rx + 395, y2: 245, stroke: "#cbd5e1", "stroke-width": 2 }));
+
+      // Nhánh f <= 1
+      const strokeLeft = state.step === 3 ? "#22c55e" : "#38bdf8";
+      const fillLeft = state.step === 3 ? "#14532d" : "#1e293b";
+      svg.appendChild(el("rect", { x: rx + 24, y: 246, width: 230, height: 74, rx: 10, fill: fillLeft, stroke: strokeLeft, "stroke-width": 2.5 }));
+      svg.appendChild(el("text", { x: rx + 139, y: 274, "text-anchor": "middle", fill: "#ffffff", "font-size": 17, "font-weight": "700" }, "Nhánh f ≤ 1"));
+      svg.appendChild(el("text", { x: rx + 139, y: 302, "text-anchor": "middle", fill: "#86efac", "font-size": 17, "font-weight": "700" }, "(1, 1) → chi phí 1.6 ✓"));
+
+      // Nhánh f >= 2
+      svg.appendChild(el("rect", { x: rx + 281, y: 246, width: 230, height: 74, rx: 10, fill: "#1e293b", stroke: "#fb923c", "stroke-width": 2 }));
+      svg.appendChild(el("text", { x: rx + 396, y: 274, "text-anchor": "middle", fill: "#ffffff", "font-size": 17, "font-weight": "700" }, "Nhánh f ≥ 2"));
+      svg.appendChild(el("text", { x: rx + 396, y: 302, "text-anchor": "middle", fill: "#fdba74", "font-size": 17, "font-weight": "700" }, "(2, 0) → chi phí 2.0"));
+    }
+
+    if (state.step >= 3) {
+      svg.appendChild(el("rect", { x: rx + 20, y: 334, width: 495, height: 66, rx: 8, fill: "#14532d", stroke: "#22c55e", "stroke-width": 2 }));
+      svg.appendChild(el("text", { x: rx + 32, y: 360, fill: "#dcfce7", "font-size": 16, "font-weight": "700" },
+        "Chọn 1.6; vì cận dưới 1.5 < 1.6 nên phải xét hết cả hai nhánh"));
+      svg.appendChild(el("text", { x: rx + 32, y: 386, fill: "#dcfce7", "font-size": 16, "font-weight": "700" },
+        "mới chứng minh được 1.6 là tối ưu nguyên."));
+    }
+
+    wrap.appendChild(svg);
+    root.appendChild(wrap);
+
+    const foot = document.createElement("div");
+    foot.className = "scene5-foot";
+    foot.innerHTML = `<strong>Liên hệ bài thật:</strong> Bài thật có hàng trăm biến, nhưng heuristic của HiGHS tìm ngay nghiệm nguyên <strong>29.0</strong> trùng cận dưới <strong>29.0</strong> ở nút gốc, nên không cần chia nhánh.`;
+    root.appendChild(foot);
+  }
+
+  // =========================================================
+  // 10. DISPATCH RENDER + SỰ KIỆN NÚT
+  // =========================================================
+  function renderScene() {
+    const root = document.getElementById("stage-root");
+    root.innerHTML = "";
+    if (state.scene === 1) renderScene1(root);
+    else if (state.scene === 2) renderScene2(root);
+    else if (state.scene === 3) renderScene3(root);
+    else if (state.scene === 4) renderScene4(root);
+    else if (state.scene === 5) renderScene5(root);
+  }
+
+  document.getElementById("scene-tabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab-btn");
+    if (!btn) return;
+    switchScene(Number(btn.dataset.scene));
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", () => goToStep(0));
+  document.getElementById("btn-prev").addEventListener("click", () => goToStep(state.step - 1));
+  document.getElementById("btn-next").addEventListener("click", () => goToStep(state.step + 1));
+
+  document.getElementById("btn-play").addEventListener("click", () => {
+    const maxStep = SCENE_STEPS[state.scene].length - 1;
+    if (state.playing) {
+      state.playing = false;
+      cancelTimers();
+      updateControlsUI();
+    } else {
+      state.playing = true;
+      if (state.step >= maxStep) {
+        goToStep(0, true);
+      } else {
+        updateControlsUI();
+        goToStep(state.step + 1, true);
+      }
+    }
+  });
+
+  const slider = document.getElementById("speed-slider");
+  slider.addEventListener("input", () => {
+    state.speed = Number(slider.value);
+    document.getElementById("speed-label").textContent = `${state.speed.toFixed(2).replace(/\.00$/, ".0")}x`;
+  });
+
+  // Hỗ trợ phím mũi tên trái/phải và Space
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") goToStep(state.step + 1);
+    else if (e.key === "ArrowLeft") goToStep(state.step - 1);
+    else if (e.key === " ") {
+      e.preventDefault();
+      document.getElementById("btn-play").click();
+    }
+  });
+
+  // Khởi chạy ban đầu
+  updateControlsUI();
+  renderScene();
+})();
+</script>
+</body>
+</html>

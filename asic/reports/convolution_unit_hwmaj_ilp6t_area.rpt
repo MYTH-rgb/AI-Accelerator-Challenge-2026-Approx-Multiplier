@@ -1,0 +1,38 @@
+
+8. Printing statistics.
+
+=== convolution_unit ===
+
+   Number of wires:               2539
+   Number of wire bits:           2712
+   Number of public wires:           3
+   Number of public wire bits:     176
+   Number of ports:                  3
+   Number of port bits:            176
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               2557
+     AND2_X1                        65
+     AND3_X1                        94
+     AND4_X1                        54
+     AOI21_X1                      288
+     AOI22_X1                       63
+     INV_X1                        107
+     MUX2_X1                         2
+     NAND2_X1                      412
+     NAND3_X1                       71
+     NOR2_X1                       394
+     NOR3_X1                        43
+     NOR4_X1                        25
+     OAI211_X1                       1
+     OAI21_X1                      128
+     OAI22_X1                        2
+     OR2_X1                        110
+     OR3_X1                         39
+     XNOR2_X1                      354
+     XOR2_X1                       305
+
+   Chip area for module '\convolution_unit': 2889.824000
+     of which used for sequential elements: 0.000000 (0.00%)
+
