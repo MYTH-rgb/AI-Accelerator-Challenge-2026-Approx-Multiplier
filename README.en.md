@@ -14,6 +14,8 @@
 
 **Language:** [Tiếng Việt](README.md) · English
 
+<p align="center"><img src="docs/figures/prize_first_place.webp" alt="1st Prize - AI Accelerator Challenge 2026, HCMUTE" width="560"></p>
+
 > Most of the in-depth documentation (`docs/`) and the figure captions are written in Vietnamese. This page summarizes the design and results in English.
 
 ---

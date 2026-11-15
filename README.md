@@ -14,6 +14,8 @@
 
 **Ngôn ngữ:** Tiếng Việt · [English](README.en.md)
 
+<p align="center"><img src="docs/figures/prize_first_place.webp" alt="Giải Nhất - AI Accelerator Challenge 2026, HCMUTE" width="560"></p>
+
 ---
 
 ## Tóm tắt
