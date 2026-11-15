@@ -47,7 +47,7 @@ vvp sim_exhaustive
 
 Expected last lines: `TOTAL=65536  MISMATCH=0  ZERO_INPUT_ERR=0` and `RESULT: PASS (65536/65536)`. The testbench compares the RTL against an independently written model (`expected = a*b - T + comp`) and also reports ME, MAE and the maximum error.
 
-> Note: the 65,536/65,536 result was obtained during the competition. The Icarus command above is the way to re-run it; it was not re-tested with Icarus while preparing this documentation.
+> Re-verified with Icarus Verilog 12.0 (Windows, MSYS2); it runs in about 3 seconds: `MISMATCH=0`, `ME=-1.490234`, `MAE=27.293457`, `MaxE=153`, matching the results table below.
 
 ### ASIC synthesis
 

@@ -47,7 +47,7 @@ vvp sim_exhaustive
 
 Kết quả mong đợi ở cuối: `TOTAL=65536  MISMATCH=0  ZERO_INPUT_ERR=0` và `RESULT: PASS (65536/65536)`. Testbench so RTL với một mô hình tham chiếu viết độc lập (`expected = a*b - T + comp`) và tính luôn ME, MAE, sai số lớn nhất.
 
-> Lưu ý: kết quả vét cạn 65.536/65.536 đã được chạy khi làm bài thi. Lệnh Icarus ở trên là cách chạy lại; chưa được thử trên Icarus trong lần chỉnh sửa tài liệu này.
+> Đã kiểm chứng lại bằng Icarus Verilog 12.0 (Windows, MSYS2), chạy khoảng 3 giây: `MISMATCH=0`, `ME=-1.490234`, `MAE=27.293457`, `MaxE=153`, khớp với bảng kết quả bên dưới.
 
 ### Tổng hợp ASIC
 
